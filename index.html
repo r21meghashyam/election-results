@@ -57,12 +57,7 @@
         const data = JSON.parse(localStorage.getItem("data")) || [];
         let sortBy = localStorage.getItem("sortBy") || 'margin';
         let order = localStorage.getItem("order") || 'asc';
-        const urls = [
-            "https://results.eci.gov.in/ResultAcGenFeb2025/statewiseU051.htm",
-            "https://results.eci.gov.in/ResultAcGenFeb2025/statewiseU052.htm",
-            "https://results.eci.gov.in/ResultAcGenFeb2025/statewiseU053.htm",
-            "https://results.eci.gov.in/ResultAcGenFeb2025/statewiseU054.htm",
-        ];
+        const urls = Array(13).fill(0).map((_, i) => `https://results.eci.gov.in/ResultAcGenNov2025/statewiseS04${i + 1}.htm`);
 
         const changeSort = (e) => {
             sortBy = e.value;
