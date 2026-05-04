@@ -293,6 +293,7 @@ const renderContent = async () => {
         }
     });
 
+    const majorityMark = Math.ceil(data.length / 2);
     const bar = document.getElementById('bar');
     new Chart(bar, {
         type: 'bar',
@@ -305,9 +306,16 @@ const renderContent = async () => {
                 backgroundColor: parties.map(i => getPartyColor(i)),
             }, {
                 label: 'Leading',
-                data: parties.map(i => partyData[i].leading),
+                data: parties.map(i => partyData[i].leading - partyData[i].won),
                 borderWidth: 1,
                 backgroundColor: parties.map(i => getPartyColor(i) + 'bb'),
+            },
+            {
+                label: 'Majority Mark',
+                type: "line",
+                data: parties.map(i => majorityMark),
+                borderWidth: 1,
+                backgroundColor: "black",
             }]
         },
         options: {
