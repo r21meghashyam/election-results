@@ -158,7 +158,7 @@ const renderContent = async () => {
 
 
     let renderHTML = `
-    <nav><a href="/">Home</a></nav>
+    <nav><a href="./">Home</a></nav>
     <p>Last Updated: ${new Date()}</p>`;
 
     renderHTML += (`
