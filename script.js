@@ -42,16 +42,24 @@ const randomHex = () => {
     return '#' + n.toString(16).padStart(6, '0');
 };
 const getPartyColor = (party) => {
-    switch (party) {
-        case 'Aam Aadmi Party': return '#0171ae';
-        case 'Bharatiya Janata Party': return '#f78628';
-        case 'Indian National Congress': return '#166a30';
-        case 'All India Trinamool Congress': return '#51c976';
-        case 'All India Anna Dravida Munnetra Kazhagam': return '#0B9421';
-        case 'Dravida Munnetra Kazhagam': return '#FF0000';
-        case 'Tamilaga Vettri Kazhagam': return '#aaaa3a';
-        default: return randomHex();
+    let colors = {
+        'Aam Aadmi Party': '#0171ae',
+        'Bharatiya Janata Party': '#f78628',
+        'Indian National Congress': '#166a30',
+        'All India Trinamool Congress': '#51c976',
+        'All India Anna Dravida Munnetra Kazhagam': '#0B9421',
+        'Dravida Munnetra Kazhagam': '#FF0000',
+        'Tamilaga Vettri Kazhagam': '#aaaa3a'
     }
+    if (colors[party])
+        return colors[party];
+    const parties = JSON.parse(localStorage.getItem('election-parties')) || {};
+    if (parties[party])
+        return parties[party].color;
+    const newColor = randomHex();
+    parties[party] = { color: newColor };
+    localStorage.setItem("election-parties", JSON.stringify(parties));
+    return newColor;
 }
 const getRoundColor = (round) => {
     const [done, total] = round.replace("-", "").split("/");
@@ -133,6 +141,16 @@ const getPartyStatus = () => {
     })
     return partyStatus;
 }
+const getPartiesOrdered = () => {
+    const partyData = getPartyStatus();
+    const parties = Object.keys(partyData);
+    parties.sort((a, b) =>
+        (partyData[b].leading + partyData[b].won) - (partyData[a].leading + partyData[a].won)
+    )
+    return parties;
+}
+
+
 const renderContent = async () => {
     await Promise.all(urls.map(async url => await fetchData(url)));
 
@@ -153,7 +171,7 @@ const renderContent = async () => {
                     <th>Margin 1K</th>
                     <th>Margin 5K</th>
                 </tr>
-                ${Object.keys(partyStatus).sort().map(party => `<tr>
+                ${getPartiesOrdered().map(party => `<tr>
                     <td>${party}</td>
                     <td>${partyStatus[party].leading}</td>
                     <td>${partyStatus[party].won}</td>
@@ -165,7 +183,10 @@ const renderContent = async () => {
             </table>
             <div>
             <div style="margin: auto;width:500px">
-                <canvas id="party-share" style="width:500px"></canvas>
+                <canvas id="party-share"></canvas>
+            </div>
+             <div>
+                <canvas id="bar"></canvas>
             </div>
 </div>
             `);
@@ -247,13 +268,13 @@ const renderContent = async () => {
 
     const ctx = document.getElementById('party-share');
     let partyData = getPartyStatus();
-    let parties = Object.keys(partyData);
+    let parties = getPartiesOrdered();
     new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: parties,
             datasets: [{
-                label: '# of Votes',
+                label: 'Leading+Won',
                 data: parties.map(i => partyData[i].leading + partyData[i].won),
                 borderWidth: 1,
                 backgroundColor: parties.map(i => getPartyColor(i)),
@@ -262,11 +283,45 @@ const renderContent = async () => {
         options: {
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+
                 }
             }
         }
     });
+
+    const bar = document.getElementById('bar');
+    new Chart(bar, {
+        type: 'bar',
+        data: {
+            labels: parties,
+            datasets: [{
+                label: 'Won',
+                data: parties.map(i => partyData[i].won),
+                borderWidth: 1,
+                backgroundColor: parties.map(i => getPartyColor(i)),
+            }, {
+                label: 'Leading',
+                data: parties.map(i => partyData[i].leading),
+                borderWidth: 1,
+                backgroundColor: parties.map(i => getPartyColor(i) + 'bb'),
+            }]
+        },
+        options: {
+            scales: {
+                x: {
+                    stacked: true
+                },
+                y: {
+                    beginAtZero: true,
+                    stacked: true
+                }
+            }
+        }
+    });
+
+
+
 }
 const start = async (baseUrl, pages) => {
     urlHash = await getHash(baseUrl);
