@@ -157,9 +157,12 @@ const renderContent = async () => {
     const partyStatus = getPartyStatus();
 
 
-    let renderHTML = `Last Updated: ${new Date()}`;
+    let renderHTML = `
+    <nav><a href="/">Home</a></nav>
+    <p>Last Updated: ${new Date()}</p>`;
 
     renderHTML += (`
+
             <h3>Party Status</h3>
             <table>
                 <tr>
