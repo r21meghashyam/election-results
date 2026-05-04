@@ -3,6 +3,7 @@ const electionData = JSON.parse(localStorage.getItem("election-data")) || {};
 let sortBy = localStorage.getItem("sortBy") || 'margin';
 let order = localStorage.getItem("order") || 'asc';
 let urls, data, urlHash;
+let refreshController;
 const changeSort = (e) => {
     sortBy = e.value;
     localStorage.setItem("sortBy", sortBy);
@@ -36,6 +37,10 @@ const getLastUpdated = (lastUpdated) => {
     diff = Math.floor(diff / 24);
     return diff + ' days'
 }
+const randomHex = () => {
+    const n = Math.floor(Math.random() * 0xffffff);
+    return '#' + n.toString(16).padStart(6, '0');
+};
 const getPartyColor = (party) => {
     switch (party) {
         case 'Aam Aadmi Party': return '#0171ae';
@@ -45,7 +50,7 @@ const getPartyColor = (party) => {
         case 'All India Anna Dravida Munnetra Kazhagam': return '#0B9421';
         case 'Dravida Munnetra Kazhagam': return '#FF0000';
         case 'Tamilaga Vettri Kazhagam': return '#aaaa3a';
-        default: return 'white';
+        default: return randomHex();
     }
 }
 const getRoundColor = (round) => {
@@ -97,7 +102,6 @@ const fetchData = async (url) => {
 
     electionData[urlHash] = data;
     localStorage.setItem("election-data", JSON.stringify(electionData));
-    console.log("Saved", electionData, JSON.stringify(electionData), localStorage.getItem("election-data"));
 }
 const getPartyStatus = () => {
     const partyStatus = {};
@@ -159,12 +163,21 @@ const renderContent = async () => {
                     <td>${partyStatus[party].margin5K}</td>
                 </tr>`).join("")}
             </table>
+            <div>
+            <div style="margin: auto;width:500px">
+                <canvas id="party-share" style="width:500px"></canvas>
+            </div>
+</div>
             `);
+
+
 
     let rounds = { done: 0, total: 0 };
     let updated = 0;
     data.forEach(i => {
         const [done, total] = i.round.replace("-", "").split("/");
+        if (!done || !total)
+            return;
         rounds.done += Number(done);
         rounds.total += Number(total);
         if (Date.now() - i.lastUpdated < 1000)
@@ -231,11 +244,34 @@ const renderContent = async () => {
             `);
 
     document.body.innerHTML = renderHTML;
+
+    const ctx = document.getElementById('party-share');
+    let partyData = getPartyStatus();
+    let parties = Object.keys(partyData);
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: parties,
+            datasets: [{
+                label: '# of Votes',
+                data: parties.map(i => partyData[i].leading + partyData[i].won),
+                borderWidth: 1,
+                backgroundColor: parties.map(i => getPartyColor(i)),
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
 }
 const start = async (baseUrl, pages) => {
     urlHash = await getHash(baseUrl);
     urls = Array(pages).fill(0).map((_, i) => `${baseUrl}${i + 1}.htm`);
     data = electionData[urlHash] || [];
-    setInterval(renderContent, 10000);
+    refreshController = setInterval(renderContent, 10000);
     renderContent();
 }
